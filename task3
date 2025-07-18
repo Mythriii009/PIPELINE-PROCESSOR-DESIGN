@@ -1,0 +1,121 @@
+module pipeline_cpu (
+    input clk,
+    input reset
+);
+    reg [15:0] pc;
+    reg [15:0] instruction_memory [0:15];
+    reg [15:0] data_memory [0:15];
+    reg [15:0] registers [0:15];
+
+    // Pipeline registers
+    reg [15:0] IF_ID, ID_EX, EX_WB;
+    reg [15:0] alu_result;
+    reg [3:0] dest_reg;
+    reg [15:0] loaded_data;
+
+    initial begin
+        pc = 0;
+        
+        // Sample Instructions (ADD R1, R2 + R3; SUB R4, R1 - R2; LOAD R5, MEM[3])
+        instruction_memory[0] = 16'b0001_0001_0010_0011; // ADD R1 = R2 + R3
+        instruction_memory[1] = 16'b0010_0100_0001_0010; // SUB R4 = R1 - R2
+        instruction_memory[2] = 16'b0011_0101_0000_0011; // LOAD R5 = MEM[3]
+
+        registers[2] = 5; // R2
+        registers[3] = 10; // R3
+        registers[1] = 0; // R1
+        registers[4] = 0;
+        data_memory[3] = 20;
+    end
+
+    // FETCH STAGE
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            pc <= 0;
+        end else begin
+            IF_ID <= instruction_memory[pc];
+            pc <= pc + 1;
+        end
+    end
+
+    // DECODE STAGE
+    reg [3:0] opcode, rs, rd, imm;
+    always @(posedge clk) begin
+        opcode <= IF_ID[15:12];
+        rd <= IF_ID[11:8];
+        rs <= IF_ID[7:4];
+        imm <= IF_ID[3:0];
+        ID_EX <= IF_ID;
+    end
+
+    // EXECUTE STAGE
+    always @(posedge clk) begin
+        case (opcode)
+            4'b0001: alu_result <= registers[rs] + registers[imm];  // ADD
+            4'b0010: alu_result <= registers[rs] - registers[imm];  // SUB
+            4'b0011: loaded_data <= data_memory[imm];              // LOAD
+        endcase
+        dest_reg <= rd;
+        EX_WB <= ID_EX;
+    end
+
+    // WRITE BACK STAGE
+    always @(posedge clk) begin
+        case (EX_WB[15:12])
+            4'b0001, 4'b0010: registers[dest_reg] <= alu_result;
+            4'b0011: registers[dest_reg] <= loaded_data;
+        endcase
+    end
+endmodule
+
+
+
+module tb_pipeline_cpu;
+    reg clk = 0;
+    reg reset = 1;
+
+    pipeline_cpu cpu(.clk(clk), .reset(reset));
+
+    always #5 clk = ~clk;
+
+    initial begin
+        $dumpfile("pipeline.vcd");
+        $dumpvars(0, tb_pipeline_cpu);
+
+        #10 reset = 0;
+        #100 $finish;
+    end
+endmodule
+module tb_pipeline_cpu;
+    reg clk = 0;
+    reg reset = 1;
+
+    pipeline_cpu cpu(.clk(clk), .reset(reset));
+
+    always #5 clk = ~clk;
+
+    initial begin
+        $dumpfile("pipeline.vcd");
+        $dumpvars(0, tb_pipeline_cpu);
+
+        #10 reset = 0;
+        #100 $finish;
+    end
+endmodule
+
+module tb_pipeline_cpu;
+    reg clk = 0;
+    reg reset = 1;
+
+    pipeline_cpu cpu(.clk(clk), .reset(reset));
+
+    always #5 clk = ~clk;
+
+    initial begin
+        $dumpfile("pipeline.vcd");
+        $dumpvars(0, tb_pipeline_cpu);
+
+        #10 reset = 0;
+        #100 $finish;
+    end
+endmodule
